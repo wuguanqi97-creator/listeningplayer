@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>生词神秘格子</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#f7f6f2;--surface:#f9f8f5;--surface2:#f3f0ec;
+  --border:#d4d1ca;--divider:#dcd9d5;
+  --text:#28251d;--muted:#7a7974;--faint:#bab9b4;
+  --primary:#01696f;--primary-h:#0c4e54;--primary-hl:#cedcd8;
+  --shadow:0 4px 16px oklch(0.2 0.01 80 / 0.10);
+  --shadow-lg:0 12px 40px oklch(0.2 0.01 80 / 0.14);
+  --r:1rem;--rfull:9999px;
+  --font:'Satoshi','Helvetica Neue',sans-serif;
+  --trans:180ms cubic-bezier(0.16,1,0.3,1);
+}
+[data-theme="dark"]{
+  --bg:#171614;--surface:#1c1b19;--surface2:#1d1c1a;
+  --border:#393836;--divider:#262523;
+  --text:#cdccca;--muted:#797876;--faint:#5a5957;
+  --primary:#4f98a3;--primary-h:#227f8b;--primary-hl:#313b3b;
+  --shadow:0 4px 16px oklch(0 0 0/0.3);
+  --shadow-lg:0 12px 40px oklch(0 0 0/0.4);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased}
+body{
+  min-height:100dvh;font-family:var(--font);color:var(--text);
+  background:var(--bg);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:1.5rem 1rem;gap:1.25rem;
+  transition:background var(--trans),color var(--trans);
+}
+
+header{text-align:center;position:relative;width:100%;max-width:700px;}
+.label{font-size:0.75rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin-bottom:.25rem;}
+h1{font-size:clamp(1.5rem,4vw,2rem);font-weight:700;line-height:1.15;margin-bottom:.2rem;}
+.sub{font-size:clamp(0.8rem,2vw,0.9rem);color:var(--muted);}
+.theme-btn{
+  position:absolute;top:0;right:0;width:34px;height:34px;border-radius:var(--rfull);
+  background:var(--surface);border:1px solid oklch(from var(--text) l c h/0.10);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--muted);transition:background var(--trans),color var(--trans);
+}
+.theme-btn:hover{background:var(--primary-hl);color:var(--primary);}
+
+/* progress */
+.progress-row{display:flex;align-items:center;gap:.75rem;font-size:.8rem;color:var(--muted);}
+.prog-bar{flex:1;max-width:200px;height:6px;background:var(--surface2);border-radius:var(--rfull);overflow:hidden;}
+.prog-fill{height:100%;background:var(--primary);border-radius:var(--rfull);width:0%;transition:width .4s ease;}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.65rem;width:100%;max-width:700px;}
+@media(max-width:440px){.grid{grid-template-columns:repeat(3,1fr);}}
+
+/* Card flip */
+.card{aspect-ratio:1;border-radius:var(--r);cursor:pointer;perspective:600px;}
+.card.done{cursor:default;}
+.card:hover:not(.done){transform:translateY(-2px);transition:transform var(--trans);}
+.card-inner{
+  width:100%;height:100%;position:relative;transform-style:preserve-3d;
+  transition:transform 0.5s cubic-bezier(0.16,1,0.3,1);
+}
+.card.flipped .card-inner,.card.done .card-inner{transform:rotateY(180deg);}
+
+.card-front,.card-back{
+  position:absolute;inset:0;border-radius:var(--r);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border:1px solid oklch(from var(--text) l c h/0.10);
+  box-shadow:var(--shadow);
+}
+.card-front{background:var(--primary);color:#fff;}
+.front-num{font-size:clamp(1.5rem,4vw,2.25rem);font-weight:700;}
+.front-hint{font-size:clamp(0.6rem,1.5vw,0.75rem);opacity:.65;margin-top:.15rem;}
+
+.card-back{background:var(--surface);transform:rotateY(180deg);padding:.5rem;gap:.2rem;}
+.card.done .card-back{background:var(--primary-hl);}
+.hanzi{font-size:clamp(1.1rem,3.5vw,1.75rem);font-weight:700;color:var(--text);line-height:1;}
+.pinyin{font-size:clamp(0.65rem,1.8vw,0.8rem);color:var(--primary);font-weight:500;}
+.deutsch{font-size:clamp(0.6rem,1.6vw,0.75rem);color:var(--muted);}
+.check{font-size:1.1rem;opacity:0;transition:opacity var(--trans);}
+.card.done .check{opacity:1;}
+
+/* Controls */
+.controls{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center;}
+.btn{
+  padding:.45rem 1.1rem;border-radius:var(--rfull);border:none;cursor:pointer;
+  font-family:var(--font);font-size:.85rem;font-weight:500;
+  transition:background var(--trans),color var(--trans);
+}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:var(--primary-h);}
+.btn-outline{background:var(--surface);color:var(--muted);border:1px solid oklch(from var(--text) l c h/0.12);}
+.btn-outline:hover{background:var(--surface2);color:var(--text);}
+
+/* Modal */
+.modal-bg{
+  position:fixed;inset:0;background:oklch(0 0 0/0.45);
+  display:flex;align-items:center;justify-content:center;
+  z-index:100;opacity:0;pointer-events:none;transition:opacity var(--trans);
+}
+.modal-bg.open{opacity:1;pointer-events:auto;}
+.modal{
+  background:var(--surface);border-radius:1.25rem;
+  padding:2rem 1.75rem;max-width:340px;width:90%;text-align:center;
+  box-shadow:var(--shadow-lg);
+  transform:scale(0.88);transition:transform var(--trans);
+}
+.modal-bg.open .modal{transform:scale(1);}
+.modal-hanzi{font-size:4.5rem;font-weight:700;line-height:1;margin-bottom:.4rem;color:var(--text);}
+.modal-pinyin{font-size:1.2rem;color:var(--primary);font-weight:600;margin-bottom:.2rem;}
+.modal-de{font-size:.95rem;color:var(--muted);margin-bottom:1.5rem;}
+.modal-btns{display:flex;gap:.6rem;justify-content:center;}
+.btn-done{background:var(--primary);color:#fff;padding:.55rem 1.4rem;border-radius:var(--rfull);border:none;cursor:pointer;font-family:var(--font);font-size:.9rem;font-weight:600;transition:background var(--trans);}
+.btn-done:hover{background:var(--primary-h);}
+.btn-skip{background:var(--surface2);color:var(--muted);padding:.55rem 1.1rem;border-radius:var(--rfull);border:1px solid oklch(from var(--text) l c h/0.10);cursor:pointer;font-family:var(--font);font-size:.85rem;transition:background var(--trans),color var(--trans);}
+.btn-skip:hover{color:var(--text);}
+
+/* Confetti finish */
+.finish{display:none;flex-direction:column;align-items:center;gap:.5rem;font-size:1rem;color:var(--muted);}
+.finish.show{display:flex;}
+.finish-emoji{font-size:3rem;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="label">生词游戏 · 第一课</div>
+  <h1>神秘格子</h1>
+  <p class="sub">选一个数字，翻开后大声读出来！</p>
+  <button class="theme-btn" data-theme-toggle aria-label="切换模式">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+    </svg>
+  </button>
+</header>
+
+<div class="progress-row">
+  <span id="prog-text">0 / 12 完成</span>
+  <div class="prog-bar"><div class="prog-fill" id="prog-fill"></div></div>
+</div>
+
+<div class="grid" id="grid"></div>
+
+<div class="controls">
+  <button class="btn btn-outline" onclick="resetAll()">🔄 重新开始</button>
+  <button class="btn btn-outline" onclick="revealAll()">👁 全部显示</button>
+</div>
+
+<div class="finish" id="finish">
+  <div class="finish-emoji">🎉</div>
+  <strong>全部完成！太棒了！</strong>
+  <button class="btn btn-primary" onclick="resetAll()" style="margin-top:.5rem">再来一次</button>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="modal-hanzi" id="m-hanzi"></div>
+    <div class="modal-pinyin" id="m-pinyin"></div>
+    <div class="modal-de" id="m-de"></div>
+    <div class="modal-btns">
+      <button class="btn-done" onclick="markDone()">✅ 读出来了！</button>
+      <button class="btn-skip" onclick="closeModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const words=[
+  {h:'叫',  p:'jiào',      d:'heißen'},
+  {h:'什么', p:'shénme',   d:'was'},
+  {h:'名字', p:'míngzi',   d:'Name'},
+  {h:'我',  p:'wǒ',        d:'ich'},
+  {h:'是',  p:'shì',       d:'sein'},
+  {h:'老师', p:'lǎoshī',   d:'Lehrer/in'},
+  {h:'吗',  p:'ma',        d:'Fragepartikel'},
+  {h:'学生', p:'xuésheng', d:'Schüler/in'},
+  {h:'人',  p:'rén',       d:'Person/Mensch'},
+  {h:'李月', p:'Lǐ Yuè',   d:'(Eigenname)'},
+  {h:'中国', p:'Zhōngguó', d:'China'},
+  {h:'美国', p:'Měiguó',   d:'USA'},
+];
+
+let done=0, currentIdx=-1;
+const cardEls=[];
+
+function buildGrid(){
+  const g=document.getElementById('grid');
+  g.innerHTML='';cardEls.length=0;done=0;
+  updateProgress();
+  document.getElementById('finish').classList.remove('show');
+  words.forEach((w,i)=>{
+    const c=document.createElement('div');
+    c.className='card';
+    c.innerHTML=`<div class="card-inner">
+      <div class="card-front"><span class="front-num">${i+1}</span><span class="front-hint">点击翻开</span></div>
+      <div class="card-back">
+        <div class="hanzi">${w.h}</div>
+        <div class="pinyin">${w.p}</div>
+        <div class="deutsch">${w.d}</div>
+        <div class="check">✓</div>
+      </div>
+    </div>`;
+    c.addEventListener('click',()=>flip(i,c,w));
+    g.appendChild(c);cardEls.push(c);
+  });
+}
+
+function flip(i,c,w){
+  if(c.classList.contains('done'))return;
+  c.classList.add('flipped');
+  currentIdx=i;
+  document.getElementById('m-hanzi').textContent=w.h;
+  document.getElementById('m-pinyin').textContent=w.p;
+  document.getElementById('m-de').textContent=w.d;
+  setTimeout(()=>document.getElementById('modal').classList.add('open'),320);
+}
+
+function markDone(){
+  if(currentIdx<0)return;
+  cardEls[currentIdx].classList.add('done');
+  done++;updateProgress();
+  closeModal();
+  if(done===words.length)setTimeout(()=>document.getElementById('finish').classList.add('show'),400);
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+  currentIdx=-1;
+}
+
+function updateProgress(){
+  document.getElementById('prog-text').textContent=done+' / '+words.length+' 完成';
+  document.getElementById('prog-fill').style.width=(done/words.length*100)+'%';
+}
+
+function resetAll(){buildGrid();closeModal();}
+function revealAll(){cardEls.forEach(c=>{c.classList.add('flipped');});closeModal();}
+
+// Theme
+(function(){
+  const btn=document.querySelector('[data-theme-toggle]'),root=document.documentElement;
+  let dark=matchMedia('(prefers-color-scheme:dark)').matches;
+  root.setAttribute('data-theme',dark?'dark':'light');
+  btn.addEventListener('click',()=>{
+    dark=!dark;root.setAttribute('data-theme',dark?'dark':'light');
+    btn.innerHTML=dark
+      ?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
+      :'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  });
+})();
+
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+buildGrid();
+</script>
+</body>
+</html>
